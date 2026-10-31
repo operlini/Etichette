@@ -1,798 +1,409 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Riordino Etichette</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome per Icone -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Html5Qrcode Library per Scansione Barcode -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#075985',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Personalizzazioni Scanner */
-        #reader {
-            width: 100%;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            border: 2px dashed #0284c7 !important;
-        }
-        #reader video {
-            object-fit: cover !important;
-            border-radius: 0.5rem;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riordino Etichette</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- HTML5 QR Code Scanner -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .kpi-card { background: linear-gradient(135deg, #0d6efd, #0b5ed7); color: white; border-radius: 12px; }
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; display: none; }
+    .table-input { width: 70px; text-align: center; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col pb-12">
+<body>
 
-    <!-- Header App -->
-    <header class="bg-brand-600 text-white shadow-lg sticky top-0 z-40">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-tags text-2xl"></i>
-                <h1 class="text-xl font-bold tracking-wide">Riordino Etichette</h1>
-            </div>
-            <span class="text-xs bg-brand-700 text-brand-100 px-2.5 py-1 rounded-full font-medium" id="today-date">--/--/----</span>
-        </div>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-primary mb-4 shadow-sm">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-tags me-2"></i>Riordino Etichette</span>
+      <button class="btn btn-outline-light btn-sm" onclick="caricaDaCloud()"><i class="fa-solid fa-rotate me-1"></i>Sincronizza</button>
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+    
+    <!-- Tab Nav -->
+    <ul class="nav nav-pills mb-4 nav-justified bg-white p-2 rounded shadow-sm" id="mainTab" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active fw-bold" id="order-tab" data-bs-toggle="pill" data-bs-target="#order" type="button"><i class="fa-solid fa-cart-shopping me-2"></i>Ordina</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-bold" id="master-tab" data-bs-toggle="pill" data-bs-target="#master" type="button"><i class="fa-solid fa-database me-2"></i>Anagrafica Cloud</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="mainTabContent">
+      
+      <!-- TAB 1: RIORDINO ETICHETTE -->
+      <div class="tab-pane fade show active" id="order" role="tabpanel">
         
-        <!-- Tab Navigation -->
-        <div class="max-w-4xl mx-auto px-4 flex border-t border-brand-500/50">
-            <button onclick="switchTab('order')" id="tab-btn-order" class="flex-1 py-3 px-2 text-center font-semibold text-sm border-b-4 border-white transition flex items-center justify-center space-x-2">
-                <i class="fa-solid fa-barcode"></i>
-                <span>Ordine Corrente</span>
-                <span id="badge-order-count" class="bg-white text-brand-700 text-xs px-2 py-0.5 rounded-full ml-1">0</span>
-            </button>
-            <button onclick="switchTab('master')" id="tab-btn-master" class="flex-1 py-3 px-2 text-center font-semibold text-sm border-b-4 border-transparent text-brand-100 hover:text-white transition flex items-center justify-center space-x-2">
-                <i class="fa-solid fa-boxes-stacked"></i>
-                <span>Anagrafica Articoli</span>
-            </button>
+        <!-- Area Scanner & Input -->
+        <div class="card p-3 mb-4">
+          <h5 class="card-title mb-3"><i class="fa-solid fa-barcode me-2"></i>Scansione / Ricerca Articolo</h5>
+          
+          <div id="reader" class="mb-3"></div>
+
+          <div class="input-group mb-3">
+            <button class="btn btn-outline-primary" type="button" id="btnScan" onclick="toggleScanner()"><i class="fa-solid fa-camera me-1"></i>Fotocamera</button>
+            <input type="text" id="scanInput" class="form-control" placeholder="Codice articolo..." onkeypress="if(event.key==='Enter') aggiungiDaInput()">
+            <button class="btn btn-primary" type="button" onclick="aggiungiDaInput()"><i class="fa-solid fa-plus me-1"></i>Aggiungi</button>
+          </div>
         </div>
-    </header>
 
-    <!-- Main Content Container -->
-    <main class="max-w-4xl mx-auto px-4 pt-4 flex-1 w-full">
-
-        <!-- ================= TAB 1: ORDINE CORRENTE & SCANSIONE ================= -->
-        <section id="tab-order" class="space-y-4">
-            
-            <!-- Box Scansione & Inserimento Rapido -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
-                        <i class="fa-solid fa-camera text-brand-500"></i>
-                        <span>Aggiungi Articolo</span>
-                    </h2>
-                    <button onclick="toggleScanner()" id="btn-toggle-scanner" class="px-3 py-1.5 bg-brand-50 text-brand-600 hover:bg-brand-100 rounded-lg text-sm font-semibold transition flex items-center space-x-1.5">
-                        <i class="fa-solid fa-qrcode"></i>
-                        <span id="scanner-btn-text">Apri Fotocamera</span>
-                    </button>
-                </div>
-
-                <!-- Scanner Fotocamera Container (Nascosto di Default) -->
-                <div id="scanner-wrapper" class="hidden space-y-2">
-                    <div id="reader"></div>
-                    <p class="text-xs text-center text-slate-500">Inquadra il codice a barre del prodotto</p>
-                </div>
-
-                <!-- Form Ricerca / Input Codice -->
-                <div class="flex space-x-2">
-                    <div class="relative flex-1">
-                        <input type="text" id="input-barcode" placeholder="Codice Articolo o Barcode..." class="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl text-base focus:ring-2 focus:ring-brand-500 focus:outline-none" onkeyup="handleBarcodeInput(event)">
-                        <i class="fa-solid fa-barcode absolute left-3.5 top-4 text-slate-400"></i>
-                    </div>
-                    <button onclick="lookupCode()" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition flex items-center justify-center shadow-md">
-                        <i class="fa-solid fa-magnifying-glass md:mr-2"></i>
-                        <span class="hidden md:inline">Cerca</span>
-                    </button>
-                </div>
-
-                <!-- Card Prodotto Trovato / Inserimento Quantità -->
-                <div id="scanned-item-card" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-                    <div class="flex justify-between items-start border-b border-slate-200 pb-2">
-                        <div>
-                            <span id="scanned-code" class="text-xs font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded">---</span>
-                            <h3 id="scanned-desc" class="font-bold text-slate-800 text-base mt-1">---</h3>
-                        </div>
-                        <span id="status-tag" class="text-xs px-2 py-1 rounded font-semibold bg-emerald-100 text-emerald-800">In Anagrafica</span>
-                    </div>
-
-                    <!-- Input Quantità EtiFronte ed EtiRetro -->
-                    <div class="grid grid-cols-2 gap-3 pt-1">
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-600">Q.tà EtiFronte</label>
-                            <div class="flex items-center space-x-1">
-                                <button onclick="adjustQty('qty-fronte', -10)" class="w-9 h-9 bg-white border rounded-lg font-bold text-slate-600 hover:bg-slate-100 active:bg-slate-200">-</button>
-                                <input type="number" id="qty-fronte" value="0" min="0" class="w-full text-center py-1.5 border rounded-lg font-bold text-base focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                                <button onclick="adjustQty('qty-fronte', 10)" class="w-9 h-9 bg-white border rounded-lg font-bold text-slate-600 hover:bg-slate-100 active:bg-slate-200">+</button>
-                            </div>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="block text-xs font-bold text-slate-600">Q.tà EtiRetro</label>
-                            <div class="flex items-center space-x-1">
-                                <button onclick="adjustQty('qty-retro', -10)" class="w-9 h-9 bg-white border rounded-lg font-bold text-slate-600 hover:bg-slate-100 active:bg-slate-200">-</button>
-                                <input type="number" id="qty-retro" value="0" min="0" class="w-full text-center py-1.5 border rounded-lg font-bold text-base focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                                <button onclick="adjustQty('qty-retro', 10)" class="w-9 h-9 bg-white border rounded-lg font-bold text-slate-600 hover:bg-slate-100 active:bg-slate-200">+</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pulsante Conferma Aggiunta -->
-                    <button onclick="addItemToOrder()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow transition flex justify-center items-center space-x-2">
-                        <i class="fa-solid fa-plus-circle"></i>
-                        <span>Inserisci in Lista Ordine</span>
-                    </button>
-                </div>
+        <!-- KPI RIEPILOGO -->
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <div class="p-3 kpi-card text-center">
+              <small class="text-white-50 text-uppercase fw-bold">Totale EtiFronte</small>
+              <h2 class="mb-0 fw-bold" id="kpiFronte">0</h2>
             </div>
-
-            <!-- Dashboard KPI Totali Ordine -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Totale EtiFronte</span>
-                    <span id="kpi-total-fronte" class="text-2xl font-black text-brand-600">0</span>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Totale EtiRetro</span>
-                    <span id="kpi-total-retro" class="text-2xl font-black text-purple-600">0</span>
-                </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 kpi-card text-center" style="background: linear-gradient(135deg, #198754, #157347);">
+              <small class="text-white-50 text-uppercase fw-bold">Totale EtiRetro</small>
+              <h2 class="mb-0 fw-bold" id="kpiRetro">0</h2>
             </div>
-
-            <!-- Tabella Lista Ordine Corrente -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-4 py-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 text-sm flex items-center space-x-2">
-                        <i class="fa-solid fa-list-check"></i>
-                        <span>Riepilogo Ordine</span>
-                    </h3>
-                    <button onclick="clearOrder()" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center space-x-1">
-                        <i class="fa-solid fa-trash-can"></i>
-                        <span>Svuota Lista</span>
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200">
-                                <th class="py-3 px-3">Articolo</th>
-                                <th class="py-3 px-2 text-center">Fronte</th>
-                                <th class="py-3 px-2 text-center">Retro</th>
-                                <th class="py-3 px-3 text-right">Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="order-table-body">
-                            <!-- Righe Tabella Ordine Inserite Dinamicamente -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Stato vuoto -->
-                <div id="order-empty-state" class="py-8 text-center text-slate-400 space-y-2">
-                    <i class="fa-solid fa-basket-shopping text-4xl"></i>
-                    <p class="text-sm">Nessun articolo aggiunto all'ordine.</p>
-                </div>
-            </div>
-
-            <!-- Azioni Invio Ordine -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                <button onclick="sendOrderEmail()" class="py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>Invia Ordine via Email</span>
-                </button>
-                <button onclick="copyOrderTable()" class="py-3.5 px-4 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-copy"></i>
-                    <span>Copia Tabella negli Appunti</span>
-                </button>
-            </div>
-        </section>
-
-
-        <!-- ================= TAB 2: ANAGRAFICA ARTICOLI ================= -->
-        <section id="tab-master" class="space-y-4 hidden">
-            
-            <!-- Azioni Anagrafica & Ricerca -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
-                        <i class="fa-solid fa-boxes-stacked text-brand-500"></i>
-                        <span>Gestione Anagrafica</span>
-                    </h2>
-                    <button onclick="openMasterModal()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Nuovo Articolo</span>
-                    </button>
-                </div>
-
-                <!-- Campo Cerca Anagrafica -->
-                <div class="relative">
-                    <input type="text" id="search-master" placeholder="Cerca codice o descrizione..." oninput="renderMasterTable()" class="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400"></i>
-                </div>
-            </div>
-
-            <!-- Tabella Anagrafica -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
-                                <th class="py-3 px-3">Codice</th>
-                                <th class="py-3 px-3">Descrizione</th>
-                                <th class="py-3 px-2 text-center">Def. Fronte</th>
-                                <th class="py-3 px-2 text-center">Def. Retro</th>
-                                <th class="py-3 px-3 text-right">Azioni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="master-table-body">
-                            <!-- Righe Anagrafica Generate via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- ================= MODALE CREAZIONE/MODIFICA ANAGRAFICA ================= -->
-    <div id="master-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl transform transition-all">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 id="modal-title" class="font-bold text-slate-800 text-lg">Nuovo Articolo Anagrafica</h3>
-                <button onclick="closeMasterModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <form id="master-form" onsubmit="saveMasterItem(event)" class="space-y-3">
-                <input type="hidden" id="modal-edit-original-code">
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Codice Articolo / Barcode *</label>
-                    <input type="text" id="modal-code" required class="w-full px-3 py-2 border rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Descrizione *</label>
-                    <input type="text" id="modal-desc" required class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Default EtiFronte</label>
-                        <input type="number" id="modal-eti-fronte" min="0" value="0" class="w-full px-3 py-2 border rounded-xl text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Default EtiRetro</label>
-                        <input type="number" id="modal-eti-retro" min="0" value="0" class="w-full px-3 py-2 border rounded-xl text-sm font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="pt-3 flex space-x-2 justify-end">
-                    <button type="button" onclick="closeMasterModal()" class="px-4 py-2 border border-slate-300 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-100">Annulla</button>
-                    <button type="submit" class="px-5 py-2 bg-brand-600 text-white text-sm font-bold rounded-xl hover:bg-brand-700 shadow">Salva</button>
-                </div>
-            </form>
+          </div>
         </div>
+
+        <!-- TABELLA ORDINE CORRENTE -->
+        <div class="card p-3 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0"><i class="fa-solid fa-list-check me-2"></i>Lista Riordino</h5>
+            <button class="btn btn-outline-danger btn-sm" onclick="svuotaOrdine()"><i class="fa-solid fa-trash me-1"></i>Svuota</button>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Codice</th>
+                  <th>Descrizione</th>
+                  <th class="text-center">Fronte</th>
+                  <th class="text-center">Retro</th>
+                  <th class="text-end">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="tbOrdine">
+                <tr><td colspan="5" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pulsanti Invia Email / Copia -->
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+            <button class="btn btn-outline-secondary" onclick="copiaNegliAppunti()"><i class="fa-solid fa-copy me-1"></i>Copia Testo</button>
+            <button class="btn btn-success" onclick="inviaEmail()"><i class="fa-solid fa-paper-plane me-1"></i>Invia via Email</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: ANAGRAFICA MASTER -->
+      <div class="tab-pane fade" id="master" role="tabpanel">
+        
+        <!-- Form Nuovo/Modifica Articolo -->
+        <div class="card p-3 mb-4">
+          <h5 class="card-title mb-3"><i class="fa-solid fa-square-plus me-2"></i>Aggiungi / Modifica in Anagrafica Cloud</h5>
+          <form id="formAnagrafica" onsubmit="salvaInAnagrafica(event)">
+            <div class="row g-2">
+              <div class="col-md-3">
+                <input type="text" id="mCodice" class="form-control" placeholder="Codice Articolo" required>
+              </div>
+              <div class="col-md-5">
+                <input type="text" id="mDesc" class="form-control" placeholder="Descrizione" required>
+              </div>
+              <div class="col-6 col-md-2">
+                <input type="number" id="mFronte" class="form-control" placeholder="EtiFronte (Std)" value="1" min="0">
+              </div>
+              <div class="col-6 col-md-2">
+                <input type="number" id="mRetro" class="form-control" placeholder="EtiRetro (Std)" value="1" min="0">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva Articolo</button>
+          </form>
+        </div>
+
+        <!-- Tabella Master -->
+        <div class="card p-3">
+          <h5 class="card-title mb-3"><i class="fa-solid fa-table me-2"></i>Articoli in Anagrafica</h5>
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Codice</th>
+                  <th>Descrizione</th>
+                  <th>EtiFronte Std</th>
+                  <th>EtiRetro Std</th>
+                  <th class="text-end">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="tbAnagrafica">
+                <tr><td colspan="5" class="text-center text-muted">Caricamento anagrafica...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
     </div>
+  </div>
 
-    <!-- Toast Notifica integrato -->
-    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
-        <i id="toast-icon" class="fa-solid fa-circle-info"></i>
-        <span id="toast-msg">Notifica</span>
-    </div>
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- LOGICA JAVASCRIPT -->
-    <script>
-        // --- ANAGRAFICA PRESET (Dati Iniziali di Esempio) ---
-        const DEFAULT_MASTER = [
-            { code: "ART001", desc: "Olio Extravergine 1L", fronte: 100, retro: 100 },
-            { code: "ART002", desc: "Passata Pomodoro 700g", fronte: 200, retro: 0 },
-            { code: "ART003", desc: "Vino Rosso Riserva 75cl", fronte: 50, retro: 50 },
-            { code: "ART004", desc: "Miele di Millefiori 500g", fronte: 80, retro: 80 }
-        ];
+  <script>
+    // === NUOVO URL GOOGLE APPS SCRIPT ===
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGjuX86yc1mqLkBmWL4cPfv8-BrJv84gDwsO18UvbQHWXyuyEn5yWCCx8UUIv1jCdX/exec";
 
-        // --- STATO DELL'APPLICAZIONE ---
-        let masterList = [];
-        let currentOrder = [];
-        let html5QrcodeScanner = null;
-        let isScannerActive = false;
-        let activeScannedItem = null;
+    let anagrafica = [];
+    let ordineCorrente = [];
+    let html5QrcodeScanner = null;
 
-        // --- INIZIALIZZAZIONE ---
-        document.addEventListener("DOMContentLoaded", () => {
-            // Data di oggi nell'header
-            const today = new Date();
-            document.getElementById('today-date').innerText = today.toLocaleDateString('it-IT');
+    document.addEventListener("DOMContentLoaded", () => {
+      caricaDaCloud();
+    });
 
-            // Caricamento Dati
-            loadMasterData();
-            loadOrderData();
+    async function caricaDaCloud() {
+      try {
+        const res = await fetch(GOOGLE_SCRIPT_URL);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          anagrafica = data.map(item => ({
+            codice: String(item.Codice || ""),
+            descrizione: String(item.Descrizione || ""),
+            etiFronte: Number(item.EtiFronte) || 0,
+            etiRetro: Number(item.EtiRetro) || 0
+          })).filter(a => a.codice !== "");
+          renderAnagrafica();
+        }
+      } catch (err) {
+        console.warn("Impossibile sincronizzare dal cloud:", err);
+      }
+    }
 
-            renderMasterTable();
-            renderOrderTable();
+    async function sincronizzaCloud() {
+      try {
+        const dataString = encodeURIComponent(JSON.stringify(anagrafica));
+        await fetch(`${GOOGLE_SCRIPT_URL}?action=save&data=${dataString}`);
+      } catch (err) {
+        console.error("Errore salvataggio cloud:", err);
+      }
+    }
+
+    // === LOGICA ORDINE ===
+    function aggiungiArticoloOrdine(codice) {
+      if (!codice) return;
+      const codicePulito = codice.trim();
+      
+      let trovato = anagrafica.find(a => a.codice.toLowerCase() === codicePulito.toLowerCase());
+      
+      let desc = trovato ? trovato.descrizione : "";
+      let fronte = trovato ? trovato.etiFronte : 1;
+      let retro = trovato ? trovato.etiRetro : 1;
+
+      if (!trovato) {
+        desc = prompt(`Codice "${codicePulito}" non trovato. Inserisci la descrizione:`) || "Articolo generico";
+        anagrafica.push({ codice: codicePulito, descrizione: desc, etiFronte: 1, etiRetro: 1 });
+        sincronizzaCloud();
+      }
+
+      let esistenteInOrdine = ordineCorrente.find(o => o.codice.toLowerCase() === codicePulito.toLowerCase());
+      if (esistenteInOrdine) {
+        esistenteInOrdine.etiFronte += fronte;
+        esistenteInOrdine.etiRetro += retro;
+      } else {
+        ordineCorrente.push({ codice: codicePulito, descrizione: desc, etiFronte: fronte, etiRetro: retro });
+      }
+
+      renderOrdine();
+    }
+
+    function aggiungiDaInput() {
+      const input = document.getElementById("scanInput");
+      aggiungiArticoloOrdine(input.value);
+      input.value = "";
+      input.focus();
+    }
+
+    function aggiornaQuantita(index, campo, valore) {
+      ordineCorrente[index][campo] = Math.max(0, parseInt(valore) || 0);
+      renderOrdine();
+    }
+
+    function eliminaDaOrdine(index) {
+      ordineCorrente.splice(index, 1);
+      renderOrdine();
+    }
+
+    function svuotaOrdine() {
+      if (confirm("Vuoi svuotare la lista di riordino?")) {
+        ordineCorrente = [];
+        renderOrdine();
+      }
+    }
+
+    function renderOrdine() {
+      const tbody = document.getElementById("tbOrdine");
+      tbody.innerHTML = "";
+
+      let totFronte = 0;
+      let totRetro = 0;
+
+      if (ordineCorrente.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>`;
+      } else {
+        ordineCorrente.forEach((item, i) => {
+          totFronte += item.etiFronte;
+          totRetro += item.etiRetro;
+
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${item.codice}</strong></td>
+              <td>${item.descrizione}</td>
+              <td class="text-center">
+                <input type="number" class="form-control table-input d-inline" value="${item.etiFronte}" onchange="aggiornaQuantita(${i}, 'etiFronte', this.value)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control table-input d-inline" value="${item.etiRetro}" onchange="aggiornaQuantita(${i}, 'etiRetro', this.value)">
+              </td>
+              <td class="text-end">
+                <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaOrdine(${i})"><i class="fa-solid fa-times"></i></button>
+              </td>
+            </tr>
+          `;
         });
+      }
 
-        // --- GESTIONE LOCALSTORAGE ---
-        function loadMasterData() {
-            const stored = localStorage.getItem('label_reorder_master');
-            if (stored) {
-                try {
-                    masterList = JSON.parse(stored);
-                } catch(e) {
-                    masterList = DEFAULT_MASTER;
-                }
-            } else {
-                masterList = DEFAULT_MASTER;
-                saveMasterData();
-            }
-        }
+      document.getElementById("kpiFronte").innerText = totFronte;
+      document.getElementById("kpiRetro").innerText = totRetro;
+    }
 
-        function saveMasterData() {
-            localStorage.setItem('label_reorder_master', JSON.stringify(masterList));
-        }
-
-        function loadOrderData() {
-            const stored = localStorage.getItem('label_reorder_current');
-            if (stored) {
-                try {
-                    currentOrder = JSON.parse(stored);
-                } catch(e) {
-                    currentOrder = [];
-                }
-            }
-        }
-
-        function saveOrderData() {
-            localStorage.setItem('label_reorder_current', JSON.stringify(currentOrder));
-        }
-
-        // --- SWITCH TAB ---
-        function switchTab(tab) {
-            const tabOrder = document.getElementById('tab-order');
-            const tabMaster = document.getElementById('tab-master');
-            const btnOrder = document.getElementById('tab-btn-order');
-            const btnMaster = document.getElementById('tab-btn-master');
-
-            if (tab === 'order') {
-                tabOrder.classList.remove('hidden');
-                tabMaster.classList.add('hidden');
-                btnOrder.className = "flex-1 py-3 px-2 text-center font-semibold text-sm border-b-4 border-white transition flex items-center justify-center space-x-2";
-                btnMaster.className = "flex-1 py-3 px-2 text-center font-semibold text-sm border-b-4 border-transparent text-brand-100 hover:text-white transition flex items-center justify-center space-x-2";
-            } else {
-                tabMaster.classList.remove('hidden');
-                tabOrder.classList.add('hidden');
-                btnMaster.className = "flex-1 py-3 px-2 text-center font-semibold text-sm border-b-4 border-white transition flex items-center justify-center space-x-2";
-                btnOrder.className = "flex-1 py-3 px-2 text-center font-semibold text-sm border-b-4 border-transparent text-brand-100 hover:text-white transition flex items-center justify-center space-x-2";
-                
-                // Se lo scanner è attivo, chiudilo per risparmiare risorse
-                if (isScannerActive) stopScanner();
-            }
-        }
-
-        // --- GESTIONE SCANNER BARCODE ---
-        function toggleScanner() {
-            if (isScannerActive) {
-                stopScanner();
-            } else {
-                startScanner();
-            }
-        }
-
-        function startScanner() {
-            const wrapper = document.getElementById('scanner-wrapper');
-            wrapper.classList.remove('hidden');
-            document.getElementById('scanner-btn-text').innerText = "Chiudi Fotocamera";
-
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                config,
-                onScanSuccess,
-                onScanFailure
-            ).then(() => {
-                isScannerActive = true;
-            }).catch(err => {
-                showToast("Impossibile accedere alla fotocamera", "error");
-                stopScanner();
-            });
-        }
-
-        function stopScanner() {
-            if (html5QrcodeScanner && isScannerActive) {
-                html5QrcodeScanner.stop().then(() => {
-                    document.getElementById('scanner-wrapper').classList.add('hidden');
-                    document.getElementById('scanner-btn-text').innerText = "Apri Fotocamera";
-                    isScannerActive = false;
-                }).catch(err => console.error(err));
-            }
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            // Suono/Vibrazione di successo
-            if (navigator.vibrate) navigator.vibrate(100);
-            
-            document.getElementById('input-barcode').value = decodedText;
+    // === GESTIONE SCANNER FOTOCAMERA ===
+    function toggleScanner() {
+      const readerElem = document.getElementById("reader");
+      if (readerElem.style.display === "block") {
+        stopScanner();
+      } else {
+        readerElem.style.display = "block";
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        html5QrcodeScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 150 } },
+          (decodedText) => {
+            aggiungiArticoloOrdine(decodedText);
             stopScanner();
-            lookupCode(decodedText);
-        }
+          },
+          (errorMessage) => {}
+        ).catch(err => {
+          alert("Impossibile attivare la fotocamera. Assicurati di usare HTTPS.");
+          stopScanner();
+        });
+      }
+    }
 
-        function onScanFailure(error) {
-            // Ignorato durante la scansione continua
-        }
+    function stopScanner() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+          document.getElementById("reader").style.display = "none";
+        }).catch(() => {
+          document.getElementById("reader").style.display = "none";
+        });
+      } else {
+        document.getElementById("reader").style.display = "none";
+      }
+    }
 
-        function handleBarcodeInput(event) {
-            if (event.key === 'Enter') {
-                lookupCode();
-            }
-        }
+    // === ANAGRAFICA MASTER ===
+    function salvaInAnagrafica(e) {
+      e.preventDefault();
+      const cod = document.getElementById("mCodice").value.trim();
+      const desc = document.getElementById("mDesc").value.trim();
+      const fronte = parseInt(document.getElementById("mFronte").value) || 0;
+      const retro = parseInt(document.getElementById("mRetro").value) || 0;
 
-        // --- RICERCA E PREPARAZIONE ARTICOLO ---
-        function lookupCode(explicitCode = null) {
-            const codeInput = explicitCode || document.getElementById('input-barcode').value.trim();
-            if (!codeInput) {
-                showToast("Inserisci un codice valido", "error");
-                return;
-            }
+      let idx = anagrafica.findIndex(a => a.codice.toLowerCase() === cod.toLowerCase());
+      if (idx >= 0) {
+        anagrafica[idx] = { codice: cod, descrizione: desc, etiFronte: fronte, etiRetro: retro };
+      } else {
+        anagrafica.push({ codice: cod, descrizione: desc, etiFronte: fronte, etiRetro: retro });
+      }
 
-            const found = masterList.find(i => i.code.toLowerCase() === codeInput.toLowerCase());
+      renderAnagrafica();
+      sincronizzaCloud();
+      document.getElementById("formAnagrafica").reset();
+      alert("Articolo salvato e sincronizzato sul cloud!");
+    }
 
-            const card = document.getElementById('scanned-item-card');
-            const codeEl = document.getElementById('scanned-code');
-            const descEl = document.getElementById('scanned-desc');
-            const statusEl = document.getElementById('status-tag');
-            const qtyFronteInput = document.getElementById('qty-fronte');
-            const qtyRetroInput = document.getElementById('qty-retro');
+    function eliminaDaAnagrafica(codice) {
+      const pwd = prompt("Inserisci la password di sicurezza (2026):");
+      if (pwd !== "2026") {
+        alert("Password errata!");
+        return;
+      }
+      anagrafica = anagrafica.filter(a => a.codice !== codice);
+      renderAnagrafica();
+      sincronizzaCloud();
+    }
 
-            card.classList.remove('hidden');
-            codeEl.innerText = codeInput;
+    function renderAnagrafica() {
+      const tbody = document.getElementById("tbAnagrafica");
+      tbody.innerHTML = "";
 
-            if (found) {
-                descEl.innerText = found.desc;
-                statusEl.innerText = "In Anagrafica";
-                statusEl.className = "text-xs px-2 py-1 rounded font-semibold bg-emerald-100 text-emerald-800";
-                
-                qtyFronteInput.value = found.fronte;
-                qtyRetroInput.value = found.retro;
+      if (anagrafica.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nessun articolo in anagrafica.</td></tr>`;
+        return;
+      }
 
-                activeScannedItem = {
-                    code: found.code,
-                    desc: found.desc
-                };
-            } else {
-                // Prodotto NON in anagrafica
-                descEl.innerText = "Nuovo Prodotto (Non censito)";
-                statusEl.innerText = "Non in Anagrafica";
-                statusEl.className = "text-xs px-2 py-1 rounded font-semibold bg-amber-100 text-amber-800";
-                
-                qtyFronteInput.value = 100;
-                qtyRetroInput.value = 100;
+      anagrafica.forEach(a => {
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${a.codice}</strong></td>
+            <td>${a.descrizione}</td>
+            <td>${a.etiFronte}</td>
+            <td>${a.etiRetro}</td>
+            <td class="text-end">
+              <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaAnagrafica('${a.codice}')"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
 
-                // Richiedi descrizione immediata per articolo non presente
-                const customDesc = prompt(`Codice '${codeInput}' non presente in anagrafica. Inserisci una descrizione per procedere:`, "Articolo generico");
-                if (!customDesc) {
-                    card.classList.add('hidden');
-                    return;
-                }
+    // === ESPORTAZIONE & EMAIL ===
+    function generaTestoOrdine() {
+      let testo = `RIORDINO ETICHETTE - ${new Date().toLocaleDateString()}\n\n`;
+      ordineCorrente.forEach(o => {
+        testo += `Codice: ${o.codice} | Desc: ${o.descrizione} | Fronte: ${o.etiFronte} | Retro: ${o.etiRetro}\n`;
+      });
+      testo += `\nTOTALE ETICHETTE FRONTE: ${document.getElementById("kpiFronte").innerText}`;
+      testo += `\nTOTALE ETICHETTE RETRO: ${document.getElementById("kpiRetro").innerText}`;
+      return testo;
+    }
 
-                activeScannedItem = {
-                    code: codeInput,
-                    desc: customDesc
-                };
-                descEl.innerText = customDesc;
-            }
-        }
+    function inviaEmail() {
+      if (ordineCorrente.length === 0) return alert("La lista di riordino è vuota!");
+      const oggetto = encodeURIComponent(`Riordino Etichette - ${new Date().toLocaleDateString()}`);
+      const corpo = encodeURIComponent(generaTestoOrdine());
+      window.location.href = `mailto:?subject=${oggetto}&body=${corpo}`;
+    }
 
-        function adjustQty(inputId, delta) {
-            const el = document.getElementById(inputId);
-            let val = parseInt(el.value) || 0;
-            val = Math.max(0, val + delta);
-            el.value = val;
-        }
-
-        // --- AGGIUNTA ALL'ORDINE ---
-        function addItemToOrder() {
-            if (!activeScannedItem) return;
-
-            const qtyFronte = parseInt(document.getElementById('qty-fronte').value) || 0;
-            const qtyRetro = parseInt(document.getElementById('qty-retro').value) || 0;
-
-            if (qtyFronte === 0 && qtyRetro === 0) {
-                showToast("Specifica almeno una quantità (Fronte o Retro)", "error");
-                return;
-            }
-
-            // Verifica se l'articolo è già nell'ordine
-            const existingIndex = currentOrder.findIndex(i => i.code === activeScannedItem.code);
-
-            if (existingIndex > -1) {
-                currentOrder[existingIndex].fronte += qtyFronte;
-                currentOrder[existingIndex].retro += qtyRetro;
-                showToast(`Aggiornate quantità per ${activeScannedItem.code}`);
-            } else {
-                currentOrder.push({
-                    code: activeScannedItem.code,
-                    desc: activeScannedItem.desc,
-                    fronte: qtyFronte,
-                    retro: qtyRetro
-                });
-                showToast(`Articolo ${activeScannedItem.code} aggiunto all'ordine`);
-            }
-
-            saveOrderData();
-            renderOrderTable();
-
-            // Reset Form Scansione
-            document.getElementById('input-barcode').value = '';
-            document.getElementById('scanned-item-card').classList.add('hidden');
-            activeScannedItem = null;
-        }
-
-        // --- RENDER TABELLA ORDINE CORRENTE ---
-        function renderOrderTable() {
-            const tbody = document.getElementById('order-table-body');
-            const emptyState = document.getElementById('order-empty-state');
-            const countBadge = document.getElementById('badge-order-count');
-            tbody.innerHTML = '';
-
-            let totalFronte = 0;
-            let totalRetro = 0;
-
-            if (currentOrder.length === 0) {
-                emptyState.classList.remove('hidden');
-                countBadge.innerText = '0';
-            } else {
-                emptyState.classList.add('hidden');
-                countBadge.innerText = currentOrder.length;
-
-                currentOrder.forEach((item, index) => {
-                    totalFronte += item.fronte;
-                    totalRetro += item.retro;
-
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
-                    tr.innerHTML = `
-                        <td class="py-3 px-3">
-                            <span class="font-mono font-bold text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">${item.code}</span>
-                            <div class="font-semibold text-slate-800 text-sm mt-0.5">${escapeHtml(item.desc)}</div>
-                        </td>
-                        <td class="py-3 px-2 text-center font-bold text-brand-600">${item.fronte}</td>
-                        <td class="py-3 px-2 text-center font-bold text-purple-600">${item.retro}</td>
-                        <td class="py-3 px-3 text-right">
-                            <button onclick="removeOrderItem(${index})" class="text-rose-500 hover:text-rose-700 p-1 rounded">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            document.getElementById('kpi-total-fronte').innerText = totalFronte;
-            document.getElementById('kpi-total-retro').innerText = totalRetro;
-        }
-
-        function removeOrderItem(index) {
-            currentOrder.splice(index, 1);
-            saveOrderData();
-            renderOrderTable();
-            showToast("Articolo rimosso dall'ordine");
-        }
-
-        function clearOrder() {
-            if (currentOrder.length === 0) return;
-            if (confirm("Sei sicuro di voler svuotare interamente la lista d'ordine?")) {
-                currentOrder = [];
-                saveOrderData();
-                renderOrderTable();
-                showToast("Lista ordine svuotata");
-            }
-        }
-
-        // --- INVIO E COPIA ORDINE ---
-        function sendOrderEmail() {
-            if (currentOrder.length === 0) {
-                showToast("Aggiungi almeno un articolo all'ordine prima di inviare", "error");
-                return;
-            }
-
-            const todayStr = new Date().toLocaleDateString('it-IT');
-            const subject = encodeURIComponent(`Riordino Etichette - ${todayStr}`);
-
-            let bodyText = `RIORDINO ETICHETTE - Data: ${todayStr}\n\n`;
-            bodyText += `CODICE | DESCRIZIONE | Q.TA FRONTE | Q.TA RETRO\n`;
-            bodyText += `-----------------------------------------------\n`;
-
-            currentOrder.forEach(item => {
-                bodyText += `${item.code} | ${item.desc} | Fronte: ${item.fronte} | Retro: ${item.retro}\n`;
-            });
-
-            const totalFronte = currentOrder.reduce((acc, i) => acc + i.fronte, 0);
-            const totalRetro = currentOrder.reduce((acc, i) => acc + i.retro, 0);
-
-            bodyText += `-----------------------------------------------\n`;
-            bodyText += `TOTALE ETICHETTE FRONTE: ${totalFronte}\n`;
-            bodyText += `TOTALE ETICHETTE RETRO: ${totalRetro}\n`;
-
-            window.location.href = `mailto:?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
-        }
-
-        function copyOrderTable() {
-            if (currentOrder.length === 0) {
-                showToast("Nessun ordine da copiare", "error");
-                return;
-            }
-
-            const todayStr = new Date().toLocaleDateString('it-IT');
-            let copyText = `RIORDINO ETICHETTE (${todayStr})\n\nCodice\tDescrizione\tEtiFronte\tEtiRetro\n`;
-
-            currentOrder.forEach(item => {
-                copyText += `${item.code}\t${item.desc}\t${item.fronte}\t${item.retro}\n`;
-            });
-
-            // Fallback copia per iframe/browser
-            const tempInput = document.createElement("textarea");
-            tempInput.value = copyText;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand("copy");
-            document.body.removeChild(tempInput);
-
-            showToast("Tabella riordino copiata negli appunti!");
-        }
-
-
-        // ================= GESTIONE ANAGRAFICA =================
-        function renderMasterTable() {
-            const tbody = document.getElementById('master-table-body');
-            const searchVal = document.getElementById('search-master').value.toLowerCase();
-            tbody.innerHTML = '';
-
-            const filtered = masterList.filter(i => 
-                i.code.toLowerCase().includes(searchVal) || 
-                i.desc.toLowerCase().includes(searchVal)
-            );
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nessun articolo trovato in anagrafica</td></tr>`;
-                return;
-            }
-
-            filtered.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="py-3 px-3 font-mono font-bold text-slate-700 text-xs">${escapeHtml(item.code)}</td>
-                    <td class="py-3 px-3 font-semibold text-slate-800">${escapeHtml(item.desc)}</td>
-                    <td class="py-3 px-2 text-center text-slate-600 font-medium">${item.fronte}</td>
-                    <td class="py-3 px-2 text-center text-slate-600 font-medium">${item.retro}</td>
-                    <td class="py-3 px-3 text-right space-x-1">
-                        <button onclick="editMasterItem('${item.code}')" class="text-brand-600 hover:text-brand-800 p-1">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="deleteMasterItem('${item.code}')" class="text-rose-500 hover:text-rose-700 p-1">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function openMasterModal(editCode = null) {
-            const modal = document.getElementById('master-modal');
-            const title = document.getElementById('modal-title');
-            const form = document.getElementById('master-form');
-            
-            form.reset();
-            document.getElementById('modal-edit-original-code').value = '';
-
-            if (editCode) {
-                const item = masterList.find(i => i.code === editCode);
-                if (item) {
-                    title.innerText = "Modifica Articolo Anagrafica";
-                    document.getElementById('modal-edit-original-code').value = item.code;
-                    document.getElementById('modal-code').value = item.code;
-                    document.getElementById('modal-desc').value = item.desc;
-                    document.getElementById('modal-eti-fronte').value = item.fronte;
-                    document.getElementById('modal-eti-retro').value = item.retro;
-                }
-            } else {
-                title.innerText = "Nuovo Articolo Anagrafica";
-            }
-
-            modal.classList.remove('hidden');
-        }
-
-        function closeMasterModal() {
-            document.getElementById('master-modal').classList.add('hidden');
-        }
-
-        function saveMasterItem(event) {
-            event.preventDefault();
-            const origCode = document.getElementById('modal-edit-original-code').value;
-            const code = document.getElementById('modal-code').value.trim();
-            const desc = document.getElementById('modal-desc').value.trim();
-            const fronte = parseInt(document.getElementById('modal-eti-fronte').value) || 0;
-            const retro = parseInt(document.getElementById('modal-eti-retro').value) || 0;
-
-            if (origCode) {
-                // Modifica
-                const idx = masterList.findIndex(i => i.code === origCode);
-                if (idx > -1) {
-                    masterList[idx] = { code, desc, fronte, retro };
-                    showToast("Articolo anagrafica aggiornato");
-                }
-            } else {
-                // Nuovo inserimento
-                if (masterList.some(i => i.code.toLowerCase() === code.toLowerCase())) {
-                    showToast("Codice articolo già esistente in anagrafica!", "error");
-                    return;
-                }
-                masterList.push({ code, desc, fronte, retro });
-                showToast("Nuovo articolo salvato in anagrafica");
-            }
-
-            saveMasterData();
-            renderMasterTable();
-            closeMasterModal();
-        }
-
-        function editMasterItem(code) {
-            openMasterModal(code);
-        }
-
-        function deleteMasterItem(code) {
-            const pwd = prompt(`Inserisci la password per confermare l'eliminazione dell'articolo ${code}:`);
-            if (pwd === "2026") {
-                masterList = masterList.filter(i => i.code !== code);
-                saveMasterData();
-                renderMasterTable();
-                showToast(`Articolo ${code} eliminato dall'anagrafica`);
-            } else if (pwd !== null) {
-                showToast("Password errata. Eliminazione annullata.", "error");
-            }
-        }
-
-        // --- UTILITY TOAST NOTIFICA ---
-        function showToast(msg, type = "success") {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-msg');
-            const toastIcon = document.getElementById('toast-icon');
-
-            toastMsg.innerText = msg;
-            if (type === "error") {
-                toast.className = toast.className.replace('bg-slate-800', 'bg-rose-600');
-                toastIcon.className = "fa-solid fa-triangle-exclamation";
-            } else {
-                toast.className = toast.className.replace('bg-rose-600', 'bg-slate-800');
-                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
-            }
-
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
-        }
-
-        function escapeHtml(str) {
-            return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
-    </script>
+    function copiaNegliAppunti() {
+      if (ordineCorrente.length === 0) return alert("La lista di riordino è vuota!");
+      navigator.clipboard.writeText(generaTestoOrdine()).then(() => {
+        alert("Lista riordino copiata negli appunti!");
+      });
+    }
+  </script>
 </body>
 </html>
