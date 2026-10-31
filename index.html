@@ -446,7 +446,7 @@
       if (!articolo) return;
 
       document.getElementById("mCodice").value = articolo.codice;
-      document.getElementById("mCodice").readOnly = true; // Impedisce di cambiare il codice chiave in modifica
+      document.getElementById("mCodice").readOnly = true;
       document.getElementById("mDesc").value = articolo.descrizione;
       document.getElementById("mCodFronte").value = articolo.codFronte;
       document.getElementById("mCodRetro").value = articolo.codRetro;
@@ -454,7 +454,6 @@
       document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-pen-to-square me-2"></i>Modifica Articolo: ${articolo.codice}`;
       document.getElementById("btnAnnullaModifica").classList.remove("d-none");
 
-      // Sposta l'utente in cima alla card del form
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -514,7 +513,7 @@
 
     // === ESPORTAZIONE & EMAIL ===
     function generaTestoOrdine() {
-      let testo = `RIORDINO ETICHETTE - ${new Date().toLocaleDateString()}\n\n`;
+      let testo = `RIORDINO ETICHETTE - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}\n\n`;
       ordineCorrente.forEach(o => {
         testo += `Articolo: ${o.codice} (${o.descrizione})\n`;
         if(!isNessuna(o.codFronte) && o.qtaFronte > 0) testo += `   - Eti. Fronte [${o.codFronte}]: ${o.qtaFronte} pz\n`;
@@ -526,9 +525,11 @@
 
     function inviaEmail() {
       if (ordineCorrente.length === 0) return alert("La lista di riordino è vuota!");
-      const oggetto = encodeURIComponent(`Riordino Etichette - ${new Date().toLocaleDateString()}`);
+      const destinatario = "magazzino@magazzino.it";
+      const oraInvio = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const oggetto = encodeURIComponent(`Riordino Etichette - ${new Date().toLocaleDateString()} ore ${oraInvio}`);
       const corpo = encodeURIComponent(generaTestoOrdine());
-      window.location.href = `mailto:?subject=${oggetto}&body=${corpo}`;
+      window.location.href = `mailto:${destinatario}?subject=${oggetto}&body=${corpo}`;
     }
 
     function copiaNegliAppunti() {
