@@ -16,6 +16,8 @@
     .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     #reader { width: 100%; border-radius: 12px; overflow: hidden; display: none; }
     .table-input { width: 70px; text-align: center; }
+    .section-fronte { background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 12px; border-radius: 8px; }
+    .section-retro { background-color: #f8f9fa; border-left: 4px solid #198754; padding: 12px; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -70,8 +72,8 @@
               <thead class="table-light">
                 <tr>
                   <th>Codice / Descrizione</th>
-                  <th>Eti. Fronte (Cod / Q.tà)</th>
-                  <th>Eti. Retro (Cod / Q.tà)</th>
+                  <th>Eti. Fronte</th>
+                  <th>Eti. Retro</th>
                   <th class="text-end">Azione</th>
                 </tr>
               </thead>
@@ -105,10 +107,10 @@
                 <input type="text" id="mDesc" class="form-control" placeholder="Descrizione" required>
               </div>
               <div class="col-md-3">
-                <input type="text" id="mCodFronte" class="form-control" placeholder="Cod. Eti Fronte">
+                <input type="text" id="mCodFronte" class="form-control" placeholder="Cod. Eti Fronte (o nessuna)">
               </div>
               <div class="col-md-3">
-                <input type="text" id="mCodRetro" class="form-control" placeholder="Cod. Eti Retro">
+                <input type="text" id="mCodRetro" class="form-control" placeholder="Cod. Eti Retro (o nessuna)">
               </div>
             </div>
             <button type="submit" class="btn btn-primary mt-3"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva Articolo</button>
@@ -146,28 +148,39 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title"><i class="fa-solid fa-cart-plus me-2"></i>Conferma Quantità e Etichette</h5>
+          <h5 class="modal-title"><i class="fa-solid fa-cart-plus me-2"></i>Inserimento Quantità Etichette</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="modalCodiceArticolo">
           <input type="hidden" id="modalDescArticolo">
 
-          <p class="mb-2">Articolo: <strong id="modalInfoArticolo"></strong></p>
-          <hr>
+          <p class="mb-3">Articolo: <strong id="modalInfoArticolo"></strong></p>
           
-          <div class="mb-3">
-            <label class="form-label fw-bold">Codice Etichetta Fronte</label>
-            <input type="text" id="modalCodFronte" class="form-control">
-            <label class="form-label mt-2 text-muted small">Quantità Fronte:</label>
-            <input type="number" id="modalQtaFronte" class="form-control" value="1" min="0">
+          <!-- SEZIONE FRONTE -->
+          <div class="section-fronte mb-3" id="wrapperFronte">
+            <label class="form-label fw-bold text-primary mb-1"><i class="fa-solid fa-arrow-up-from-bracket me-1"></i>Etichetta Fronte</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text bg-white">Codice</span>
+              <input type="text" id="modalCodFronte" class="form-control">
+            </div>
+            <div class="input-group">
+              <span class="input-group-text bg-white">Quantità</span>
+              <input type="number" id="modalQtaFronte" class="form-control" value="0" min="0">
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-bold">Codice Etichetta Retro</label>
-            <input type="text" id="modalCodRetro" class="form-control">
-            <label class="form-label mt-2 text-muted small">Quantità Retro:</label>
-            <input type="number" id="modalQtaRetro" class="form-control" value="1" min="0">
+          <!-- SEZIONE RETRO -->
+          <div class="section-retro mb-2" id="wrapperRetro">
+            <label class="form-label fw-bold text-success mb-1"><i class="fa-solid fa-arrow-rotate-left me-1"></i>Etichetta Retro</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text bg-white">Codice</span>
+              <input type="text" id="modalCodRetro" class="form-control">
+            </div>
+            <div class="input-group">
+              <span class="input-group-text bg-white">Quantità</span>
+              <input type="number" id="modalQtaRetro" class="form-control" value="0" min="0">
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -182,7 +195,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // URL GOOGLE APPS SCRIPT AGGIORNATO
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw-6lY9cP3GCGlG1dEXfA9bDEMVt1-C78ou-vkGQf3vukTqriNks8sBpp5oCaulxpct/exec";
 
     let anagrafica = [];
@@ -201,10 +213,10 @@
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           anagrafica = data.map(item => ({
-            codice: String(item.Codice || ""),
-            descrizione: String(item.Descrizione || ""),
-            codFronte: String(item.CodFronte || ""),
-            codRetro: String(item.CodRetro || "")
+            codice: String(item.Codice !== undefined ? item.Codice : (item.codice || "")),
+            descrizione: String(item.Descrizione !== undefined ? item.Descrizione : (item.descrizione || "")),
+            codFronte: String(item.CodFronte !== undefined ? item.CodFronte : (item.codFronte || "nessuna")),
+            codRetro: String(item.CodRetro !== undefined ? item.CodRetro : (item.codRetro || "nessuna"))
           })).filter(a => a.codice !== "");
           renderAnagrafica();
         }
@@ -222,6 +234,12 @@
       }
     }
 
+    function isNessuna(valore) {
+      if (!valore) return true;
+      const v = String(valore).trim().toLowerCase();
+      return v === "" || v === "nessuna" || v === "-" || v === "nessuno";
+    }
+
     // === GESTIONE INSERIMENTO NELL'ORDINE ===
     function gestisciScansioneInput() {
       const input = document.getElementById("scanInput");
@@ -236,7 +254,7 @@
 
       if (!trovato) {
         let desc = prompt(`Codice "${codice}" non trovato in anagrafica. Inserisci la descrizione:`) || "Articolo generico";
-        let nuovoArticolo = { codice: codice, descrizione: desc, codFronte: "FR-" + codice, codRetro: "RET-" + codice };
+        let nuovoArticolo = { codice: codice, descrizione: desc, codFronte: "FR-" + codice, codRetro: "nessuna" };
         anagrafica.push(nuovoArticolo);
         sincronizzaCloud();
         trovato = nuovoArticolo;
@@ -245,10 +263,29 @@
       document.getElementById("modalCodiceArticolo").value = trovato.codice;
       document.getElementById("modalDescArticolo").value = trovato.descrizione;
       document.getElementById("modalInfoArticolo").innerText = `${trovato.codice} - ${trovato.descrizione}`;
-      document.getElementById("modalCodFronte").value = trovato.codFronte || "";
-      document.getElementById("modalCodRetro").value = trovato.codRetro || "";
-      document.getElementById("modalQtaFronte").value = 1;
-      document.getElementById("modalQtaRetro").value = 1;
+
+      const wrapFronte = document.getElementById("wrapperFronte");
+      const wrapRetro = document.getElementById("wrapperRetro");
+
+      if (isNessuna(trovato.codFronte)) {
+        wrapFronte.style.display = "none";
+        document.getElementById("modalCodFronte").value = "nessuna";
+        document.getElementById("modalQtaFronte").value = 0;
+      } else {
+        wrapFronte.style.display = "block";
+        document.getElementById("modalCodFronte").value = trovato.codFronte;
+        document.getElementById("modalQtaFronte").value = 0;
+      }
+
+      if (isNessuna(trovato.codRetro)) {
+        wrapRetro.style.display = "none";
+        document.getElementById("modalCodRetro").value = "nessuna";
+        document.getElementById("modalQtaRetro").value = 0;
+      } else {
+        wrapRetro.style.display = "block";
+        document.getElementById("modalCodRetro").value = trovato.codRetro;
+        document.getElementById("modalQtaRetro").value = 0;
+      }
 
       modalInstance.show();
     }
@@ -256,10 +293,12 @@
     function confermaAggiuntaOrdine() {
       const codice = document.getElementById("modalCodiceArticolo").value;
       const descrizione = document.getElementById("modalDescArticolo").value;
+      
       const codFronte = document.getElementById("modalCodFronte").value.trim();
-      const qtaFronte = parseInt(document.getElementById("modalQtaFronte").value) || 0;
+      const qtaFronte = isNessuna(codFronte) ? 0 : (parseInt(document.getElementById("modalQtaFronte").value) || 0);
+
       const codRetro = document.getElementById("modalCodRetro").value.trim();
-      const qtaRetro = parseInt(document.getElementById("modalQtaRetro").value) || 0;
+      const qtaRetro = isNessuna(codRetro) ? 0 : (parseInt(document.getElementById("modalQtaRetro").value) || 0);
 
       let master = anagrafica.find(a => a.codice.toLowerCase() === codice.toLowerCase());
       if (master) {
@@ -307,17 +346,21 @@
       }
 
       ordineCorrente.forEach((item, i) => {
+        let htmlFronte = isNessuna(item.codFronte) ? '<span class="text-muted small">-</span>' : `
+          <span class="badge bg-primary mb-1">${item.codFronte}</span><br>
+          <input type="number" class="form-control table-input d-inline" value="${item.qtaFronte}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaFronte', this.value)">
+        `;
+
+        let htmlRetro = isNessuna(item.codRetro) ? '<span class="text-muted small">-</span>' : `
+          <span class="badge bg-success mb-1">${item.codRetro}</span><br>
+          <input type="number" class="form-control table-input d-inline" value="${item.qtaRetro}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaRetro', this.value)">
+        `;
+
         tbody.innerHTML += `
           <tr>
             <td><strong>${item.codice}</strong><br><small class="text-muted">${item.descrizione}</small></td>
-            <td>
-              <span class="badge bg-secondary mb-1">${item.codFronte || 'Nessuno'}</span><br>
-              <input type="number" class="form-control table-input d-inline" value="${item.qtaFronte}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaFronte', this.value)">
-            </td>
-            <td>
-              <span class="badge bg-secondary mb-1">${item.codRetro || 'Nessuno'}</span><br>
-              <input type="number" class="form-control table-input d-inline" value="${item.qtaRetro}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaRetro', this.value)">
-            </td>
+            <td>${htmlFronte}</td>
+            <td>${htmlRetro}</td>
             <td class="text-end">
               <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaOrdine(${i})"><i class="fa-solid fa-times"></i></button>
             </td>
@@ -366,8 +409,8 @@
       e.preventDefault();
       const cod = document.getElementById("mCodice").value.trim();
       const desc = document.getElementById("mDesc").value.trim();
-      const codFronte = document.getElementById("mCodFronte").value.trim();
-      const codRetro = document.getElementById("mCodRetro").value.trim();
+      const codFronte = document.getElementById("mCodFronte").value.trim() || "nessuna";
+      const codRetro = document.getElementById("mCodRetro").value.trim() || "nessuna";
 
       let idx = anagrafica.findIndex(a => a.codice.toLowerCase() === cod.toLowerCase());
       if (idx >= 0) {
@@ -403,12 +446,15 @@
       }
 
       anagrafica.forEach(a => {
+        let badgeFronte = isNessuna(a.codFronte) ? '<span class="text-muted">-</span>' : `<span class="badge bg-primary">${a.codFronte}</span>`;
+        let badgeRetro = isNessuna(a.codRetro) ? '<span class="text-muted">-</span>' : `<span class="badge bg-success">${a.codRetro}</span>`;
+
         tbody.innerHTML += `
           <tr>
             <td><strong>${a.codice}</strong></td>
             <td>${a.descrizione}</td>
-            <td><span class="badge bg-secondary">${a.codFronte || '-'}</span></td>
-            <td><span class="badge bg-secondary">${a.codRetro || '-'}</span></td>
+            <td>${badgeFronte}</td>
+            <td>${badgeRetro}</td>
             <td class="text-end">
               <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaAnagrafica('${a.codice}')"><i class="fa-solid fa-trash"></i></button>
             </td>
@@ -422,8 +468,8 @@
       let testo = `RIORDINO ETICHETTE - ${new Date().toLocaleDateString()}\n\n`;
       ordineCorrente.forEach(o => {
         testo += `Articolo: ${o.codice} (${o.descrizione})\n`;
-        if(o.qtaFronte > 0) testo += `   - Eti. Fronte [${o.codFronte}]: ${o.qtaFronte} pz\n`;
-        if(o.qtaRetro > 0) testo += `   - Eti. Retro [${o.codRetro}]: ${o.qtaRetro} pz\n`;
+        if(!isNessuna(o.codFronte) && o.qtaFronte > 0) testo += `   - Eti. Fronte [${o.codFronte}]: ${o.qtaFronte} pz\n`;
+        if(!isNessuna(o.codRetro) && o.qtaRetro > 0) testo += `   - Eti. Retro [${o.codRetro}]: ${o.qtaRetro} pz\n`;
         testo += `----------------------------------------\n`;
       });
       return testo;
