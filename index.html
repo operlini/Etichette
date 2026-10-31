@@ -97,7 +97,7 @@
         
         <!-- Form Nuovo/Modifica Articolo -->
         <div class="card p-3 mb-4">
-          <h5 class="card-title mb-3"><i class="fa-solid fa-square-plus me-2"></i>Aggiungi / Modifica in Anagrafica Cloud</h5>
+          <h5 class="card-title mb-3" id="formTitle"><i class="fa-solid fa-square-plus me-2"></i>Aggiungi / Modifica in Anagrafica Cloud</h5>
           <form id="formAnagrafica" onsubmit="salvaInAnagrafica(event)">
             <div class="row g-2">
               <div class="col-md-3">
@@ -113,13 +113,23 @@
                 <input type="text" id="mCodRetro" class="form-control" placeholder="Cod. Eti Retro (o nessuna)">
               </div>
             </div>
-            <button type="submit" class="btn btn-primary mt-3"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva Articolo</button>
+            <div class="mt-3 d-flex gap-2">
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva Articolo</button>
+              <button type="button" id="btnAnnullaModifica" class="btn btn-secondary d-none" onclick="resetFormAnagrafica()">Annulla</button>
+            </div>
           </form>
         </div>
 
-        <!-- Tabella Master -->
+        <!-- Tabella Master con Filtro -->
         <div class="card p-3">
-          <h5 class="card-title mb-3"><i class="fa-solid fa-table me-2"></i>Articoli in Anagrafica</h5>
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h5 class="card-title mb-0"><i class="fa-solid fa-table me-2"></i>Articoli in Anagrafica</h5>
+            <div class="input-group" style="width: 280px;">
+              <span class="input-group-text bg-white"><i class="fa-solid fa-search"></i></span>
+              <input type="text" id="filtroAnagrafica" class="form-control" placeholder="Filtra articoli..." oninput="renderAnagrafica()">
+            </div>
+          </div>
+
           <div class="table-responsive">
             <table class="table table-striped align-middle">
               <thead class="table-light">
@@ -128,7 +138,7 @@
                   <th>Descrizione</th>
                   <th>Cod. Eti Fronte</th>
                   <th>Cod. Eti Retro</th>
-                  <th class="text-end">Azione</th>
+                  <th class="text-end">Azioni</th>
                 </tr>
               </thead>
               <tbody id="tbAnagrafica">
@@ -421,8 +431,38 @@
 
       renderAnagrafica();
       sincronizzaCloud();
-      document.getElementById("formAnagrafica").reset();
+      resetFormAnagrafica();
       alert("Articolo salvato e sincronizzato sul cloud!");
+    }
+
+    function preparaModificaAnagrafica(codice) {
+      const pwd = prompt("Inserisci la password di sicurezza (2026):");
+      if (pwd !== "2026") {
+        alert("Password errata!");
+        return;
+      }
+
+      let articolo = anagrafica.find(a => a.codice === codice);
+      if (!articolo) return;
+
+      document.getElementById("mCodice").value = articolo.codice;
+      document.getElementById("mCodice").readOnly = true; // Impedisce di cambiare il codice chiave in modifica
+      document.getElementById("mDesc").value = articolo.descrizione;
+      document.getElementById("mCodFronte").value = articolo.codFronte;
+      document.getElementById("mCodRetro").value = articolo.codRetro;
+
+      document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-pen-to-square me-2"></i>Modifica Articolo: ${articolo.codice}`;
+      document.getElementById("btnAnnullaModifica").classList.remove("d-none");
+
+      // Sposta l'utente in cima alla card del form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetFormAnagrafica() {
+      document.getElementById("formAnagrafica").reset();
+      document.getElementById("mCodice").readOnly = false;
+      document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-square-plus me-2"></i>Aggiungi / Modifica in Anagrafica Cloud`;
+      document.getElementById("btnAnnullaModifica").classList.add("d-none");
     }
 
     function eliminaDaAnagrafica(codice) {
@@ -438,14 +478,22 @@
 
     function renderAnagrafica() {
       const tbody = document.getElementById("tbAnagrafica");
+      const filtro = document.getElementById("filtroAnagrafica").value.toLowerCase();
       tbody.innerHTML = "";
 
-      if (anagrafica.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nessun articolo in anagrafica.</td></tr>`;
+      let anagraficaFiltrata = anagrafica.filter(a => 
+        a.codice.toLowerCase().includes(filtro) || 
+        a.descrizione.toLowerCase().includes(filtro) ||
+        a.codFronte.toLowerCase().includes(filtro) ||
+        a.codRetro.toLowerCase().includes(filtro)
+      );
+
+      if (anagraficaFiltrata.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nessun articolo trovato.</td></tr>`;
         return;
       }
 
-      anagrafica.forEach(a => {
+      anagraficaFiltrata.forEach(a => {
         let badgeFronte = isNessuna(a.codFronte) ? '<span class="text-muted">-</span>' : `<span class="badge bg-primary">${a.codFronte}</span>`;
         let badgeRetro = isNessuna(a.codRetro) ? '<span class="text-muted">-</span>' : `<span class="badge bg-success">${a.codRetro}</span>`;
 
@@ -456,7 +504,8 @@
             <td>${badgeFronte}</td>
             <td>${badgeRetro}</td>
             <td class="text-end">
-              <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaAnagrafica('${a.codice}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn btn-outline-primary btn-sm me-1" onclick="preparaModificaAnagrafica('${a.codice}')" title="Modifica"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaAnagrafica('${a.codice}')" title="Elimina"><i class="fa-solid fa-trash"></i></button>
             </td>
           </tr>
         `;
