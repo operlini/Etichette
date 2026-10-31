@@ -14,7 +14,6 @@
   <style>
     body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .kpi-card { background: linear-gradient(135deg, #0d6efd, #0b5ed7); color: white; border-radius: 12px; }
     #reader { width: 100%; border-radius: 12px; overflow: hidden; display: none; }
     .table-input { width: 70px; text-align: center; }
   </style>
@@ -54,24 +53,8 @@
 
           <div class="input-group mb-3">
             <button class="btn btn-outline-primary" type="button" id="btnScan" onclick="toggleScanner()"><i class="fa-solid fa-camera me-1"></i>Fotocamera</button>
-            <input type="text" id="scanInput" class="form-control" placeholder="Codice articolo..." onkeypress="if(event.key==='Enter') aggiungiDaInput()">
-            <button class="btn btn-primary" type="button" onclick="aggiungiDaInput()"><i class="fa-solid fa-plus me-1"></i>Aggiungi</button>
-          </div>
-        </div>
-
-        <!-- KPI RIEPILOGO -->
-        <div class="row g-3 mb-4">
-          <div class="col-6">
-            <div class="p-3 kpi-card text-center">
-              <small class="text-white-50 text-uppercase fw-bold">Totale EtiFronte</small>
-              <h2 class="mb-0 fw-bold" id="kpiFronte">0</h2>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="p-3 kpi-card text-center" style="background: linear-gradient(135deg, #198754, #157347);">
-              <small class="text-white-50 text-uppercase fw-bold">Totale EtiRetro</small>
-              <h2 class="mb-0 fw-bold" id="kpiRetro">0</h2>
-            </div>
+            <input type="text" id="scanInput" class="form-control" placeholder="Codice articolo..." onkeypress="if(event.key==='Enter') gestisciScansioneInput()">
+            <button class="btn btn-primary" type="button" onclick="gestisciScansioneInput()"><i class="fa-solid fa-plus me-1"></i>Aggiungi</button>
           </div>
         </div>
 
@@ -86,15 +69,14 @@
             <table class="table table-hover align-middle">
               <thead class="table-light">
                 <tr>
-                  <th>Codice</th>
-                  <th>Descrizione</th>
-                  <th class="text-center">Fronte</th>
-                  <th class="text-center">Retro</th>
+                  <th>Codice / Descrizione</th>
+                  <th>Eti. Fronte (Cod / Q.tà)</th>
+                  <th>Eti. Retro (Cod / Q.tà)</th>
                   <th class="text-end">Azione</th>
                 </tr>
               </thead>
               <tbody id="tbOrdine">
-                <tr><td colspan="5" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>
+                <tr><td colspan="4" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>
               </tbody>
             </table>
           </div>
@@ -119,14 +101,14 @@
               <div class="col-md-3">
                 <input type="text" id="mCodice" class="form-control" placeholder="Codice Articolo" required>
               </div>
-              <div class="col-md-5">
+              <div class="col-md-3">
                 <input type="text" id="mDesc" class="form-control" placeholder="Descrizione" required>
               </div>
-              <div class="col-6 col-md-2">
-                <input type="number" id="mFronte" class="form-control" placeholder="EtiFronte (Std)" value="1" min="0">
+              <div class="col-md-3">
+                <input type="text" id="mCodFronte" class="form-control" placeholder="Cod. Eti Fronte">
               </div>
-              <div class="col-6 col-md-2">
-                <input type="number" id="mRetro" class="form-control" placeholder="EtiRetro (Std)" value="1" min="0">
+              <div class="col-md-3">
+                <input type="text" id="mCodRetro" class="form-control" placeholder="Cod. Eti Retro">
               </div>
             </div>
             <button type="submit" class="btn btn-primary mt-3"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva Articolo</button>
@@ -142,8 +124,8 @@
                 <tr>
                   <th>Codice</th>
                   <th>Descrizione</th>
-                  <th>EtiFronte Std</th>
-                  <th>EtiRetro Std</th>
+                  <th>Cod. Eti Fronte</th>
+                  <th>Cod. Eti Retro</th>
                   <th class="text-end">Azione</th>
                 </tr>
               </thead>
@@ -159,18 +141,57 @@
     </div>
   </div>
 
+  <!-- MODALE DI CONFERMA INSERIMENTO QUANTITÀ & CODICI -->
+  <div class="modal fade" id="modalInserimento" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fa-solid fa-cart-plus me-2"></i>Conferma Quantità e Etichette</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalCodiceArticolo">
+          <input type="hidden" id="modalDescArticolo">
+
+          <p class="mb-2">Articolo: <strong id="modalInfoArticolo"></strong></p>
+          <hr>
+          
+          <div class="mb-3">
+            <label class="form-label fw-bold">Codice Etichetta Fronte</label>
+            <input type="text" id="modalCodFronte" class="form-control">
+            <label class="form-label mt-2 text-muted small">Quantità Fronte:</label>
+            <input type="number" id="modalQtaFronte" class="form-control" value="1" min="0">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Codice Etichetta Retro</label>
+            <input type="text" id="modalCodRetro" class="form-control">
+            <label class="form-label mt-2 text-muted small">Quantità Retro:</label>
+            <input type="number" id="modalQtaRetro" class="form-control" value="1" min="0">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="button" class="btn btn-primary" onclick="confermaAggiuntaOrdine()">Conferma e Aggiungi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // === NUOVO URL GOOGLE APPS SCRIPT ===
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGjuX86yc1mqLkBmWL4cPfv8-BrJv84gDwsO18UvbQHWXyuyEn5yWCCx8UUIv1jCdX/exec";
+    // URL GOOGLE APPS SCRIPT AGGIORNATO
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw-6lY9cP3GCGlG1dEXfA9bDEMVt1-C78ou-vkGQf3vukTqriNks8sBpp5oCaulxpct/exec";
 
     let anagrafica = [];
     let ordineCorrente = [];
     let html5QrcodeScanner = null;
+    let modalInstance = null;
 
     document.addEventListener("DOMContentLoaded", () => {
+      modalInstance = new bootstrap.Modal(document.getElementById('modalInserimento'));
       caricaDaCloud();
     });
 
@@ -182,8 +203,8 @@
           anagrafica = data.map(item => ({
             codice: String(item.Codice || ""),
             descrizione: String(item.Descrizione || ""),
-            etiFronte: Number(item.EtiFronte) || 0,
-            etiRetro: Number(item.EtiRetro) || 0
+            codFronte: String(item.CodFronte || ""),
+            codRetro: String(item.CodRetro || "")
           })).filter(a => a.codice !== "");
           renderAnagrafica();
         }
@@ -201,44 +222,67 @@
       }
     }
 
-    // === LOGICA ORDINE ===
-    function aggiungiArticoloOrdine(codice) {
+    // === GESTIONE INSERIMENTO NELL'ORDINE ===
+    function gestisciScansioneInput() {
+      const input = document.getElementById("scanInput");
+      const codice = input.value.trim();
       if (!codice) return;
-      const codicePulito = codice.trim();
-      
-      let trovato = anagrafica.find(a => a.codice.toLowerCase() === codicePulito.toLowerCase());
-      
-      let desc = trovato ? trovato.descrizione : "";
-      let fronte = trovato ? trovato.etiFronte : 1;
-      let retro = trovato ? trovato.etiRetro : 1;
+      input.value = "";
+      apriModaleInserimento(codice);
+    }
+
+    function apriModaleInserimento(codice) {
+      let trovato = anagrafica.find(a => a.codice.toLowerCase() === codice.toLowerCase());
 
       if (!trovato) {
-        desc = prompt(`Codice "${codicePulito}" non trovato. Inserisci la descrizione:`) || "Articolo generico";
-        anagrafica.push({ codice: codicePulito, descrizione: desc, etiFronte: 1, etiRetro: 1 });
+        let desc = prompt(`Codice "${codice}" non trovato in anagrafica. Inserisci la descrizione:`) || "Articolo generico";
+        let nuovoArticolo = { codice: codice, descrizione: desc, codFronte: "FR-" + codice, codRetro: "RET-" + codice };
+        anagrafica.push(nuovoArticolo);
         sincronizzaCloud();
+        trovato = nuovoArticolo;
       }
 
-      let esistenteInOrdine = ordineCorrente.find(o => o.codice.toLowerCase() === codicePulito.toLowerCase());
-      if (esistenteInOrdine) {
-        esistenteInOrdine.etiFronte += fronte;
-        esistenteInOrdine.etiRetro += retro;
+      document.getElementById("modalCodiceArticolo").value = trovato.codice;
+      document.getElementById("modalDescArticolo").value = trovato.descrizione;
+      document.getElementById("modalInfoArticolo").innerText = `${trovato.codice} - ${trovato.descrizione}`;
+      document.getElementById("modalCodFronte").value = trovato.codFronte || "";
+      document.getElementById("modalCodRetro").value = trovato.codRetro || "";
+      document.getElementById("modalQtaFronte").value = 1;
+      document.getElementById("modalQtaRetro").value = 1;
+
+      modalInstance.show();
+    }
+
+    function confermaAggiuntaOrdine() {
+      const codice = document.getElementById("modalCodiceArticolo").value;
+      const descrizione = document.getElementById("modalDescArticolo").value;
+      const codFronte = document.getElementById("modalCodFronte").value.trim();
+      const qtaFronte = parseInt(document.getElementById("modalQtaFronte").value) || 0;
+      const codRetro = document.getElementById("modalCodRetro").value.trim();
+      const qtaRetro = parseInt(document.getElementById("modalQtaRetro").value) || 0;
+
+      let master = anagrafica.find(a => a.codice.toLowerCase() === codice.toLowerCase());
+      if (master) {
+        master.codFronte = codFronte;
+        master.codRetro = codRetro;
+      }
+
+      let esistente = ordineCorrente.find(o => o.codice.toLowerCase() === codice.toLowerCase());
+      if (esistente) {
+        esistente.qtaFronte += qtaFronte;
+        esistente.qtaRetro += qtaRetro;
+        esistente.codFronte = codFronte;
+        esistente.codRetro = codRetro;
       } else {
-        ordineCorrente.push({ codice: codicePulito, descrizione: desc, etiFronte: fronte, etiRetro: retro });
+        ordineCorrente.push({ codice, descrizione, codFronte, qtaFronte, codRetro, qtaRetro });
       }
 
+      modalInstance.hide();
       renderOrdine();
     }
 
-    function aggiungiDaInput() {
-      const input = document.getElementById("scanInput");
-      aggiungiArticoloOrdine(input.value);
-      input.value = "";
-      input.focus();
-    }
-
-    function aggiornaQuantita(index, campo, valore) {
+    function aggiornaQuantitaOrdine(index, campo, valore) {
       ordineCorrente[index][campo] = Math.max(0, parseInt(valore) || 0);
-      renderOrdine();
     }
 
     function eliminaDaOrdine(index) {
@@ -257,36 +301,29 @@
       const tbody = document.getElementById("tbOrdine");
       tbody.innerHTML = "";
 
-      let totFronte = 0;
-      let totRetro = 0;
-
       if (ordineCorrente.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>`;
-      } else {
-        ordineCorrente.forEach((item, i) => {
-          totFronte += item.etiFronte;
-          totRetro += item.etiRetro;
-
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>${item.codice}</strong></td>
-              <td>${item.descrizione}</td>
-              <td class="text-center">
-                <input type="number" class="form-control table-input d-inline" value="${item.etiFronte}" onchange="aggiornaQuantita(${i}, 'etiFronte', this.value)">
-              </td>
-              <td class="text-center">
-                <input type="number" class="form-control table-input d-inline" value="${item.etiRetro}" onchange="aggiornaQuantita(${i}, 'etiRetro', this.value)">
-              </td>
-              <td class="text-end">
-                <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaOrdine(${i})"><i class="fa-solid fa-times"></i></button>
-              </td>
-            </tr>
-          `;
-        });
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>`;
+        return;
       }
 
-      document.getElementById("kpiFronte").innerText = totFronte;
-      document.getElementById("kpiRetro").innerText = totRetro;
+      ordineCorrente.forEach((item, i) => {
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${item.codice}</strong><br><small class="text-muted">${item.descrizione}</small></td>
+            <td>
+              <span class="badge bg-secondary mb-1">${item.codFronte || 'Nessuno'}</span><br>
+              <input type="number" class="form-control table-input d-inline" value="${item.qtaFronte}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaFronte', this.value)">
+            </td>
+            <td>
+              <span class="badge bg-secondary mb-1">${item.codRetro || 'Nessuno'}</span><br>
+              <input type="number" class="form-control table-input d-inline" value="${item.qtaRetro}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaRetro', this.value)">
+            </td>
+            <td class="text-end">
+              <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaOrdine(${i})"><i class="fa-solid fa-times"></i></button>
+            </td>
+          </tr>
+        `;
+      });
     }
 
     // === GESTIONE SCANNER FOTOCAMERA ===
@@ -301,8 +338,8 @@
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 150 } },
           (decodedText) => {
-            aggiungiArticoloOrdine(decodedText);
             stopScanner();
+            apriModaleInserimento(decodedText);
           },
           (errorMessage) => {}
         ).catch(err => {
@@ -329,14 +366,14 @@
       e.preventDefault();
       const cod = document.getElementById("mCodice").value.trim();
       const desc = document.getElementById("mDesc").value.trim();
-      const fronte = parseInt(document.getElementById("mFronte").value) || 0;
-      const retro = parseInt(document.getElementById("mRetro").value) || 0;
+      const codFronte = document.getElementById("mCodFronte").value.trim();
+      const codRetro = document.getElementById("mCodRetro").value.trim();
 
       let idx = anagrafica.findIndex(a => a.codice.toLowerCase() === cod.toLowerCase());
       if (idx >= 0) {
-        anagrafica[idx] = { codice: cod, descrizione: desc, etiFronte: fronte, etiRetro: retro };
+        anagrafica[idx] = { codice: cod, descrizione: desc, codFronte: codFronte, codRetro: codRetro };
       } else {
-        anagrafica.push({ codice: cod, descrizione: desc, etiFronte: fronte, etiRetro: retro });
+        anagrafica.push({ codice: cod, descrizione: desc, codFronte: codFronte, codRetro: codRetro });
       }
 
       renderAnagrafica();
@@ -370,8 +407,8 @@
           <tr>
             <td><strong>${a.codice}</strong></td>
             <td>${a.descrizione}</td>
-            <td>${a.etiFronte}</td>
-            <td>${a.etiRetro}</td>
+            <td><span class="badge bg-secondary">${a.codFronte || '-'}</span></td>
+            <td><span class="badge bg-secondary">${a.codRetro || '-'}</span></td>
             <td class="text-end">
               <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaAnagrafica('${a.codice}')"><i class="fa-solid fa-trash"></i></button>
             </td>
@@ -384,10 +421,11 @@
     function generaTestoOrdine() {
       let testo = `RIORDINO ETICHETTE - ${new Date().toLocaleDateString()}\n\n`;
       ordineCorrente.forEach(o => {
-        testo += `Codice: ${o.codice} | Desc: ${o.descrizione} | Fronte: ${o.etiFronte} | Retro: ${o.etiRetro}\n`;
+        testo += `Articolo: ${o.codice} (${o.descrizione})\n`;
+        if(o.qtaFronte > 0) testo += `   - Eti. Fronte [${o.codFronte}]: ${o.qtaFronte} pz\n`;
+        if(o.qtaRetro > 0) testo += `   - Eti. Retro [${o.codRetro}]: ${o.qtaRetro} pz\n`;
+        testo += `----------------------------------------\n`;
       });
-      testo += `\nTOTALE ETICHETTE FRONTE: ${document.getElementById("kpiFronte").innerText}`;
-      testo += `\nTOTALE ETICHETTE RETRO: ${document.getElementById("kpiRetro").innerText}`;
       return testo;
     }
 
