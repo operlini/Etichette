@@ -12,33 +12,35 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    #reader { width: 100%; border-radius: 12px; overflow: hidden; display: none; }
-    .table-input { width: 70px; text-align: center; }
-    .section-fronte { background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 12px; border-radius: 8px; }
-    .section-retro { background-color: #f8f9fa; border-left: 4px solid #198754; padding: 12px; border-radius: 8px; }
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.95rem; }
+    .card { border-radius: 12px; border: none; box-shadow: 0 3px 10px rgba(0,0,0,0.04); margin-bottom: 1rem; }
+    #reader { width: 100%; border-radius: 10px; overflow: hidden; display: none; }
+    .table-input { width: 65px; text-align: center; padding: 0.25rem; }
+    .section-fronte { background-color: #f1f5f9; border-left: 4px solid #0d6efd; padding: 10px; border-radius: 6px; }
+    .section-retro { background-color: #f1f5f9; border-left: 4px solid #198754; padding: 10px; border-radius: 6px; }
+    .btn-sm-mobile { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
+    table td, table th { vertical-align: middle; padding: 0.5rem !important; }
   </style>
 </head>
 <body>
 
   <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-primary mb-4 shadow-sm">
-    <div class="container">
-      <span class="navbar-brand mb-0 h1"><i class="fa-solid fa-tags me-2"></i>Riordino Etichette</span>
-      <button class="btn btn-outline-light btn-sm" onclick="caricaDaCloud()"><i class="fa-solid fa-rotate me-1"></i>Sincronizza</button>
+  <nav class="navbar navbar-dark bg-primary mb-3 shadow-sm py-2">
+    <div class="container-fluid px-3">
+      <span class="navbar-brand mb-0 hari fs-6 fw-bold"><i class="fa-solid fa-tags me-2"></i>Riordino Etichette</span>
+      <button class="btn btn-outline-light btn-sm btn-sm-mobile" onclick="caricaDaCloud()"><i class="fa-solid fa-rotate me-1"></i>Sync</button>
     </div>
   </nav>
 
-  <div class="container pb-5">
+  <div class="container px-2 px-md-3 pb-5">
     
     <!-- Tab Nav -->
-    <ul class="nav nav-pills mb-4 nav-justified bg-white p-2 rounded shadow-sm" id="mainTab" role="tablist">
+    <ul class="nav nav-pills mb-3 nav-justified bg-white p-1 rounded shadow-sm" id="mainTab" role="tablist">
       <li class="nav-item">
-        <button class="nav-link active fw-bold" id="order-tab" data-bs-toggle="pill" data-bs-target="#order" type="button"><i class="fa-solid fa-cart-shopping me-2"></i>Ordina</button>
+        <button class="nav-link active fw-bold py-2" id="order-tab" data-bs-toggle="pill" data-bs-target="#order" type="button"><i class="fa-solid fa-cart-shopping me-1"></i>Ordina</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link fw-bold" id="master-tab" data-bs-toggle="pill" data-bs-target="#master" type="button"><i class="fa-solid fa-database me-2"></i>Anagrafica Cloud</button>
+        <button class="nav-link fw-bold py-2" id="master-tab" data-bs-toggle="pill" data-bs-target="#master" type="button"><i class="fa-solid fa-database me-1"></i>Anagrafica</button>
       </li>
     </ul>
 
@@ -48,45 +50,45 @@
       <div class="tab-pane fade show active" id="order" role="tabpanel">
         
         <!-- Area Scanner & Input -->
-        <div class="card p-3 mb-4">
-          <h5 class="card-title mb-3"><i class="fa-solid fa-barcode me-2"></i>Scansione / Ricerca Articolo</h5>
+        <div class="card p-3">
+          <h6 class="card-title text-secondary fw-bold mb-2"><i class="fa-solid fa-barcode me-1"></i>Scansione / Ricerca</h6>
           
-          <div id="reader" class="mb-3"></div>
+          <div id="reader" class="mb-2"></div>
 
-          <div class="input-group mb-3">
-            <button class="btn btn-outline-primary" type="button" id="btnScan" onclick="toggleScanner()"><i class="fa-solid fa-camera me-1"></i>Fotocamera</button>
+          <div class="input-group">
+            <button class="btn btn-outline-primary btn-sm-mobile" type="button" id="btnScan" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i></button>
             <input type="text" id="scanInput" class="form-control" placeholder="Codice articolo..." onkeypress="if(event.key==='Enter') gestisciScansioneInput()">
-            <button class="btn btn-primary" type="button" onclick="gestisciScansioneInput()"><i class="fa-solid fa-plus me-1"></i>Aggiungi</button>
+            <button class="btn btn-primary btn-sm-mobile" type="button" onclick="gestisciScansioneInput()"><i class="fa-solid fa-plus"></i></button>
           </div>
         </div>
 
         <!-- TABELLA ORDINE CORRENTE -->
-        <div class="card p-3 mb-4">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="card-title mb-0"><i class="fa-solid fa-list-check me-2"></i>Lista Riordino</h5>
-            <button class="btn btn-outline-danger btn-sm" onclick="svuotaOrdine()"><i class="fa-solid fa-trash me-1"></i>Svuota</button>
+        <div class="card p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="card-title text-secondary fw-bold mb-0"><i class="fa-solid fa-list-check me-1"></i>Lista Riordino</h6>
+            <button class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;" onclick="svuotaOrdine()"><i class="fa-solid fa-trash me-1"></i>Svuota</button>
           </div>
           
           <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
+            <table class="table table-hover">
+              <thead class="table-light" style="font-size: 0.85rem;">
                 <tr>
-                  <th>Codice / Descrizione</th>
-                  <th>Eti. Fronte</th>
-                  <th>Eti. Retro</th>
-                  <th class="text-end">Azione</th>
+                  <th>Articolo</th>
+                  <th class="text-center">Fronte</th>
+                  <th class="text-center">Retro</th>
+                  <th class="text-end">Az.</th>
                 </tr>
               </thead>
-              <tbody id="tbOrdine">
-                <tr><td colspan="4" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>
+              <tbody id="tbOrdine" style="font-size: 0.85rem;">
+                <tr><td colspan="4" class="text-center text-muted py-3">Nessun articolo in lista.</td></tr>
               </tbody>
             </table>
           </div>
 
           <!-- Pulsanti Invia Email / Copia -->
-          <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-            <button class="btn btn-outline-secondary" onclick="copiaNegliAppunti()"><i class="fa-solid fa-copy me-1"></i>Copia Testo</button>
-            <button class="btn btn-success" onclick="inviaEmail()"><i class="fa-solid fa-paper-plane me-1"></i>Invia via Email</button>
+          <div class="d-grid gap-2 d-flex mt-2">
+            <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="copiaNegliAppunti()"><i class="fa-solid fa-copy me-1"></i>Copia</button>
+            <button class="btn btn-success btn-sm flex-fill" onclick="inviaEmail()"><i class="fa-solid fa-paper-plane me-1"></i>Invia Email</button>
           </div>
         </div>
 
@@ -96,53 +98,52 @@
       <div class="tab-pane fade" id="master" role="tabpanel">
         
         <!-- Form Nuovo/Modifica Articolo -->
-        <div class="card p-3 mb-4">
-          <h5 class="card-title mb-3" id="formTitle"><i class="fa-solid fa-square-plus me-2"></i>Aggiungi / Modifica in Anagrafica Cloud</h5>
+        <div class="card p-3">
+          <h6 class="card-title text-secondary fw-bold mb-2" id="formTitle"><i class="fa-solid fa-square-plus me-1"></i>Nuovo / Modifica Articolo</h6>
           <form id="formAnagrafica" onsubmit="salvaInAnagrafica(event)">
             <div class="row g-2">
-              <div class="col-md-3">
-                <input type="text" id="mCodice" class="form-control" placeholder="Codice Articolo" required>
+              <div class="col-6">
+                <input type="text" id="mCodice" class="form-control form-control-sm" placeholder="Codice Art." required>
               </div>
-              <div class="col-md-3">
-                <input type="text" id="mDesc" class="form-control" placeholder="Descrizione" required>
+              <div class="col-6">
+                <input type="text" id="mDesc" class="form-control form-control-sm" placeholder="Descrizione" required>
               </div>
-              <div class="col-md-3">
-                <input type="text" id="mCodFronte" class="form-control" placeholder="Cod. Eti Fronte (o nessuna)">
+              <div class="col-6">
+                <input type="text" id="mCodFronte" class="form-control form-control-sm" placeholder="Eti. Fronte (o nessuna)">
               </div>
-              <div class="col-md-3">
-                <input type="text" id="mCodRetro" class="form-control" placeholder="Cod. Eti Retro (o nessuna)">
+              <div class="col-6">
+                <input type="text" id="mCodRetro" class="form-control form-control-sm" placeholder="Eti. Retro (o nessuna)">
               </div>
             </div>
-            <div class="mt-3 d-flex gap-2">
-              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva Articolo</button>
-              <button type="button" id="btnAnnullaModifica" class="btn btn-secondary d-none" onclick="resetFormAnagrafica()">Annulla</button>
+            <div class="mt-2 d-flex gap-2">
+              <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="fa-solid fa-cloud-arrow-up me-1"></i>Salva</button>
+              <button type="button" id="btnAnnullaModifica" class="btn btn-secondary btn-sm d-none" onclick="resetFormAnagrafica()">Annulla</button>
             </div>
           </form>
         </div>
 
         <!-- Tabella Master con Filtro -->
         <div class="card p-3">
-          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h5 class="card-title mb-0"><i class="fa-solid fa-table me-2"></i>Articoli in Anagrafica</h5>
-            <div class="input-group" style="width: 280px;">
+          <div class="d-flex justify-content-between align-items-center mb-2 gap-1">
+            <h6 class="card-title text-secondary fw-bold mb-0">Anagrafica</h6>
+            <div class="input-group input-group-sm" style="width: 170px;">
               <span class="input-group-text bg-white"><i class="fa-solid fa-search"></i></span>
-              <input type="text" id="filtroAnagrafica" class="form-control" placeholder="Filtra articoli..." oninput="renderAnagrafica()">
+              <input type="text" id="filtroAnagrafica" class="form-control" placeholder="Cerca..." oninput="renderAnagrafica()">
             </div>
           </div>
 
           <div class="table-responsive">
-            <table class="table table-striped align-middle">
-              <thead class="table-light">
+            <table class="table table-striped">
+              <thead class="table-light" style="font-size: 0.85rem;">
                 <tr>
-                  <th>Codice</th>
-                  <th>Descrizione</th>
-                  <th>Cod. Eti Fronte</th>
-                  <th>Cod. Eti Retro</th>
+                  <th>Codice / Desc</th>
+                  <th>Fronte</th>
+                  <th>Retro</th>
                   <th class="text-end">Azioni</th>
                 </tr>
               </thead>
-              <tbody id="tbAnagrafica">
-                <tr><td colspan="5" class="text-center text-muted">Caricamento anagrafica...</td></tr>
+              <tbody id="tbAnagrafica" style="font-size: 0.85rem;">
+                <tr><td colspan="4" class="text-center text-muted py-3">Caricamento...</td></tr>
               </tbody>
             </table>
           </div>
@@ -155,47 +156,47 @@
 
   <!-- MODALE DI CONFERMA INSERIMENTO QUANTITÀ & CODICI -->
   <div class="modal fade" id="modalInserimento" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title"><i class="fa-solid fa-cart-plus me-2"></i>Inserimento Quantità Etichette</h5>
+        <div class="modal-header bg-primary text-white py-2">
+          <h6 class="modal-title fs-6"><i class="fa-solid fa-cart-plus me-1"></i>Quantità Etichette</h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body py-2">
           <input type="hidden" id="modalCodiceArticolo">
           <input type="hidden" id="modalDescArticolo">
 
-          <p class="mb-3">Articolo: <strong id="modalInfoArticolo"></strong></p>
+          <p class="mb-2 small">Articolo: <strong id="modalInfoArticolo"></strong></p>
           
           <!-- SEZIONE FRONTE -->
-          <div class="section-fronte mb-3" id="wrapperFronte">
-            <label class="form-label fw-bold text-primary mb-1"><i class="fa-solid fa-arrow-up-from-bracket me-1"></i>Etichetta Fronte</label>
-            <div class="input-group mb-2">
-              <span class="input-group-text bg-white">Codice</span>
-              <input type="text" id="modalCodFronte" class="form-control">
+          <div class="section-fronte mb-2" id="wrapperFronte">
+            <label class="form-label fw-bold text-primary mb-1 small"><i class="fa-solid fa-arrow-up-from-bracket me-1"></i>Etichetta Fronte</label>
+            <div class="input-group input-group-sm mb-1">
+              <span class="input-group-text bg-white text-muted" style="font-size: 0.8rem;">Cod.</span>
+              <input type="text" id="modalCodFronte" class="form-control bg-light" readonly>
             </div>
-            <div class="input-group">
-              <span class="input-group-text bg-white">Quantità</span>
-              <input type="number" id="modalQtaFronte" class="form-control" value="0" min="0">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white" style="font-size: 0.8rem;">Q.tà</span>
+              <input type="number" id="modalQtaFronte" class="form-control" value="" placeholder="" min="0">
             </div>
           </div>
 
           <!-- SEZIONE RETRO -->
-          <div class="section-retro mb-2" id="wrapperRetro">
-            <label class="form-label fw-bold text-success mb-1"><i class="fa-solid fa-arrow-rotate-left me-1"></i>Etichetta Retro</label>
-            <div class="input-group mb-2">
-              <span class="input-group-text bg-white">Codice</span>
-              <input type="text" id="modalCodRetro" class="form-control">
+          <div class="section-retro mb-1" id="wrapperRetro">
+            <label class="form-label fw-bold text-success mb-1 small"><i class="fa-solid fa-arrow-rotate-left me-1"></i>Etichetta Retro</label>
+            <div class="input-group input-group-sm mb-1">
+              <span class="input-group-text bg-white text-muted" style="font-size: 0.8rem;">Cod.</span>
+              <input type="text" id="modalCodRetro" class="form-control bg-light" readonly>
             </div>
-            <div class="input-group">
-              <span class="input-group-text bg-white">Quantità</span>
-              <input type="number" id="modalQtaRetro" class="form-control" value="0" min="0">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white" style="font-size: 0.8rem;">Q.tà</span>
+              <input type="number" id="modalQtaRetro" class="form-control" value="" placeholder="" min="0">
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-          <button type="button" class="btn btn-primary" onclick="confermaAggiuntaOrdine()">Conferma e Aggiungi</button>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annulla</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="confermaAggiuntaOrdine()">Conferma</button>
         </div>
       </div>
     </div>
@@ -262,12 +263,10 @@
     function apriModaleInserimento(codice) {
       let trovato = anagrafica.find(a => a.codice.toLowerCase() === codice.toLowerCase());
 
+      // SE L'ARTICOLO NON ESISTE IN ANAGRAFICA, BLOCCA E AVVISA
       if (!trovato) {
-        let desc = prompt(`Codice "${codice}" non trovato in anagrafica. Inserisci la descrizione:`) || "Articolo generico";
-        let nuovoArticolo = { codice: codice, descrizione: desc, codFronte: "FR-" + codice, codRetro: "nessuna" };
-        anagrafica.push(nuovoArticolo);
-        sincronizzaCloud();
-        trovato = nuovoArticolo;
+        alert(`Errore: L'articolo "${codice}" non esiste in anagrafica. Inseriscilo prima nella sezione Anagrafica Cloud.`);
+        return;
       }
 
       document.getElementById("modalCodiceArticolo").value = trovato.codice;
@@ -280,21 +279,21 @@
       if (isNessuna(trovato.codFronte)) {
         wrapFronte.style.display = "none";
         document.getElementById("modalCodFronte").value = "nessuna";
-        document.getElementById("modalQtaFronte").value = 0;
+        document.getElementById("modalQtaFronte").value = "";
       } else {
         wrapFronte.style.display = "block";
         document.getElementById("modalCodFronte").value = trovato.codFronte;
-        document.getElementById("modalQtaFronte").value = 0;
+        document.getElementById("modalQtaFronte").value = "";
       }
 
       if (isNessuna(trovato.codRetro)) {
         wrapRetro.style.display = "none";
         document.getElementById("modalCodRetro").value = "nessuna";
-        document.getElementById("modalQtaRetro").value = 0;
+        document.getElementById("modalQtaRetro").value = "";
       } else {
         wrapRetro.style.display = "block";
         document.getElementById("modalCodRetro").value = trovato.codRetro;
-        document.getElementById("modalQtaRetro").value = 0;
+        document.getElementById("modalQtaRetro").value = "";
       }
 
       modalInstance.show();
@@ -310,18 +309,10 @@
       const codRetro = document.getElementById("modalCodRetro").value.trim();
       const qtaRetro = isNessuna(codRetro) ? 0 : (parseInt(document.getElementById("modalQtaRetro").value) || 0);
 
-      let master = anagrafica.find(a => a.codice.toLowerCase() === codice.toLowerCase());
-      if (master) {
-        master.codFronte = codFronte;
-        master.codRetro = codRetro;
-      }
-
       let esistente = ordineCorrente.find(o => o.codice.toLowerCase() === codice.toLowerCase());
       if (esistente) {
         esistente.qtaFronte += qtaFronte;
         esistente.qtaRetro += qtaRetro;
-        esistente.codFronte = codFronte;
-        esistente.codRetro = codRetro;
       } else {
         ordineCorrente.push({ codice, descrizione, codFronte, qtaFronte, codRetro, qtaRetro });
       }
@@ -340,7 +331,7 @@
     }
 
     function svuotaOrdine() {
-      if (confirm("Vuoi svuotare la lista di riordino?")) {
+      if (confirm("Vuoi svuotare la lista?")) {
         ordineCorrente = [];
         renderOrdine();
       }
@@ -351,28 +342,28 @@
       tbody.innerHTML = "";
 
       if (ordineCorrente.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nessun articolo in lista. Scansiona un codice per iniziare.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Nessun articolo in lista.</td></tr>`;
         return;
       }
 
       ordineCorrente.forEach((item, i) => {
         let htmlFronte = isNessuna(item.codFronte) ? '<span class="text-muted small">-</span>' : `
-          <span class="badge bg-primary mb-1">${item.codFronte}</span><br>
-          <input type="number" class="form-control table-input d-inline" value="${item.qtaFronte}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaFronte', this.value)">
+          <span class="badge bg-primary mb-1" style="font-size: 0.75rem;">${item.codFronte}</span><br>
+          <input type="number" class="form-control form-control-sm table-input d-inline" value="${item.qtaFronte}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaFronte', this.value)">
         `;
 
         let htmlRetro = isNessuna(item.codRetro) ? '<span class="text-muted small">-</span>' : `
-          <span class="badge bg-success mb-1">${item.codRetro}</span><br>
-          <input type="number" class="form-control table-input d-inline" value="${item.qtaRetro}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaRetro', this.value)">
+          <span class="badge bg-success mb-1" style="font-size: 0.75rem;">${item.codRetro}</span><br>
+          <input type="number" class="form-control form-control-sm table-input d-inline" value="${item.qtaRetro}" onchange="aggiornaQuantitaOrdine(${i}, 'qtaRetro', this.value)">
         `;
 
         tbody.innerHTML += `
           <tr>
-            <td><strong>${item.codice}</strong><br><small class="text-muted">${item.descrizione}</small></td>
-            <td>${htmlFronte}</td>
-            <td>${htmlRetro}</td>
+            <td><strong>${item.codice}</strong><br><span class="text-muted small text-truncate d-inline-block" style="max-width: 110px;">${item.descrizione}</span></td>
+            <td class="text-center">${htmlFronte}</td>
+            <td class="text-center">${htmlRetro}</td>
             <td class="text-end">
-              <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaOrdine(${i})"><i class="fa-solid fa-times"></i></button>
+              <button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="eliminaDaOrdine(${i})"><i class="fa-solid fa-times"></i></button>
             </td>
           </tr>
         `;
@@ -389,14 +380,14 @@
         html5QrcodeScanner = new Html5Qrcode("reader");
         html5QrcodeScanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 150 } },
+          { fps: 10, qrbox: { width: 220, height: 120 } },
           (decodedText) => {
             stopScanner();
             apriModaleInserimento(decodedText);
           },
           (errorMessage) => {}
         ).catch(err => {
-          alert("Impossibile attivare la fotocamera. Assicurati di usare HTTPS.");
+          alert("Impossibile attivare la fotocamera (richiesto HTTPS).");
           stopScanner();
         });
       }
@@ -432,7 +423,7 @@
       renderAnagrafica();
       sincronizzaCloud();
       resetFormAnagrafica();
-      alert("Articolo salvato e sincronizzato sul cloud!");
+      alert("Salvato e sincronizzato!");
     }
 
     function preparaModificaAnagrafica(codice) {
@@ -451,7 +442,7 @@
       document.getElementById("mCodFronte").value = articolo.codFronte;
       document.getElementById("mCodRetro").value = articolo.codRetro;
 
-      document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-pen-to-square me-2"></i>Modifica Articolo: ${articolo.codice}`;
+      document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-pen-to-square me-1"></i>Modifica: ${articolo.codice}`;
       document.getElementById("btnAnnullaModifica").classList.remove("d-none");
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -460,7 +451,7 @@
     function resetFormAnagrafica() {
       document.getElementById("formAnagrafica").reset();
       document.getElementById("mCodice").readOnly = false;
-      document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-square-plus me-2"></i>Aggiungi / Modifica in Anagrafica Cloud`;
+      document.getElementById("formTitle").innerHTML = `<i class="fa-solid fa-square-plus me-1"></i>Nuovo / Modifica Articolo`;
       document.getElementById("btnAnnullaModifica").classList.add("d-none");
     }
 
@@ -488,38 +479,51 @@
       );
 
       if (anagraficaFiltrata.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nessun articolo trovato.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Nessun articolo trovato.</td></tr>`;
         return;
       }
 
       anagraficaFiltrata.forEach(a => {
-        let badgeFronte = isNessuna(a.codFronte) ? '<span class="text-muted">-</span>' : `<span class="badge bg-primary">${a.codFronte}</span>`;
-        let badgeRetro = isNessuna(a.codRetro) ? '<span class="text-muted">-</span>' : `<span class="badge bg-success">${a.codRetro}</span>`;
+        let badgeFronte = isNessuna(a.codFronte) ? '<span class="text-muted">-</span>' : `<span class="badge bg-primary" style="font-size:0.75rem;">${a.codFronte}</span>`;
+        let badgeRetro = isNessuna(a.codRetro) ? '<span class="text-muted">-</span>' : `<span class="badge bg-success" style="font-size:0.75rem;">${a.codRetro}</span>`;
 
         tbody.innerHTML += `
           <tr>
-            <td><strong>${a.codice}</strong></td>
-            <td>${a.descrizione}</td>
+            <td><strong>${a.codice}</strong><br><span class="text-muted small">${a.descrizione}</span></td>
             <td>${badgeFronte}</td>
             <td>${badgeRetro}</td>
             <td class="text-end">
-              <button class="btn btn-outline-primary btn-sm me-1" onclick="preparaModificaAnagrafica('${a.codice}')" title="Modifica"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn btn-outline-danger btn-sm" onclick="eliminaDaAnagrafica('${a.codice}')" title="Elimina"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn btn-outline-primary btn-sm py-0 px-2 me-1" onclick="preparaModificaAnagrafica('${a.codice}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-outline-danger btn-sm py-0 px-2" onclick="eliminaDaAnagrafica('${a.codice}')"><i class="fa-solid fa-trash"></i></button>
             </td>
           </tr>
         `;
       });
     }
 
-    // === ESPORTAZIONE & EMAIL ===
+    // === ESPORTAZIONE & EMAIL FORMATTATA A TABELLA ===
     function generaTestoOrdine() {
-      let testo = `RIORDINO ETICHETTE - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}\n\n`;
-      ordineCorrente.forEach(o => {
-        testo += `Articolo: ${o.codice} (${o.descrizione})\n`;
-        if(!isNessuna(o.codFronte) && o.qtaFronte > 0) testo += `   - Eti. Fronte [${o.codFronte}]: ${o.qtaFronte} pz\n`;
-        if(!isNessuna(o.codRetro) && o.qtaRetro > 0) testo += `   - Eti. Retro [${o.codRetro}]: ${o.qtaRetro} pz\n`;
+      let dataOggi = new Date().toLocaleDateString();
+      let oraOggi = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      
+      let testo = `========================================\n`;
+      testo += `       RICHIESTA RIORDINO ETICHETTE     \n`;
+      testo += ` Data: ${dataOggi} - Ora: ${oraOggi} \n`;
+      testo += `========================================\n\n`;
+
+      ordineCorrente.forEach((o, index) => {
+        testo += `[${index + 1}] ARTICOLO: ${o.codice}\n`;
+        testo += `    Descrizione : ${o.descrizione}\n`;
+        
+        if (!isNessuna(o.codFronte) && o.qtaFronte > 0) {
+          testo += `    - Fronte    : Cod. [${o.codFronte}]  ->  Q.tà: ${o.qtaFronte} pz\n`;
+        }
+        if (!isNessuna(o.codRetro) && o.qtaRetro > 0) {
+          testo += `    - Retro     : Cod. [${o.codRetro}]  ->  Q.tà: ${o.qtaRetro} pz\n`;
+        }
         testo += `----------------------------------------\n`;
       });
+
       return testo;
     }
 
@@ -535,7 +539,7 @@
     function copiaNegliAppunti() {
       if (ordineCorrente.length === 0) return alert("La lista di riordino è vuota!");
       navigator.clipboard.writeText(generaTestoOrdine()).then(() => {
-        alert("Lista riordino copiata negli appunti!");
+        alert("Lista copiata negli appunti!");
       });
     }
   </script>
